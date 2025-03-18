@@ -5,68 +5,62 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth, RegisterCredentials, LoginCredentials } from '@/hooks/use-auth';
 import { FcGoogle } from 'react-icons/fc';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, User } from 'lucide-react';
 
 export default function AuthPage() {
-  const { user, loading, signInWithGoogle, signInWithEmail, registerWithEmail } = useAuth();
+  const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState<string>("login");
   
   // Form states
-  const [loginEmail, setLoginEmail] = useState<string>('');
-  const [loginPassword, setLoginPassword] = useState<string>('');
-  const [registerEmail, setRegisterEmail] = useState<string>('');
-  const [registerPassword, setRegisterPassword] = useState<string>('');
-  const [registerConfirmPassword, setRegisterConfirmPassword] = useState<string>('');
-
-  // Error states
-  const [loginError, setLoginError] = useState<string>('');
-  const [registerError, setRegisterError] = useState<string>('');
+  const [loginCredentials, setLoginCredentials] = useState<LoginCredentials>({
+    username: '',
+    password: ''
+  });
   
+  const [registerCredentials, setRegisterCredentials] = useState<RegisterCredentials>({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: ''
+  });
+
   // Redirect to home if already logged in
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !isLoading) {
       setLocation('/');
     }
-  }, [user, loading, setLocation]);
+  }, [user, isLoading, setLocation]);
+
+  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setLoginCredentials(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setRegisterCredentials(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoginError('');
-    
-    if (!loginEmail || !loginPassword) {
-      setLoginError('Please fill in all fields');
-      return;
-    }
-    
-    signInWithEmail(loginEmail, loginPassword);
+    loginMutation.mutate(loginCredentials);
   };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-    setRegisterError('');
-    
-    if (!registerEmail || !registerPassword) {
-      setRegisterError('Please fill in all fields');
-      return;
-    }
-    
-    if (registerPassword !== registerConfirmPassword) {
-      setRegisterError('Passwords do not match');
-      return;
-    }
-    
-    if (registerPassword.length < 6) {
-      setRegisterError('Password must be at least 6 characters');
-      return;
-    }
-    
-    registerWithEmail(registerEmail, registerPassword);
+    registerMutation.mutate(registerCredentials);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
@@ -90,8 +84,8 @@ export default function AuthPage() {
 
           <Tabs defaultValue="login" className="w-full mt-8">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" onClick={() => setActiveTab("login")}>Login</TabsTrigger>
-              <TabsTrigger value="register" onClick={() => setActiveTab("register")}>Register</TabsTrigger>
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
             </TabsList>
             
             <TabsContent value="login">
@@ -103,16 +97,17 @@ export default function AuthPage() {
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="username">Username or Email</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input 
-                          id="login-email"
-                          type="email"
-                          placeholder="name@example.com"
+                          id="username"
+                          name="username"
+                          type="text"
+                          placeholder="username or email"
                           className="pl-10"
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
+                          value={loginCredentials.username}
+                          onChange={handleLoginChange}
                         />
                       </div>
                     </div>
@@ -121,41 +116,30 @@ export default function AuthPage() {
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input 
-                          id="login-password"
+                          id="password"
+                          name="password"
                           type="password"
                           placeholder="••••••••"
                           className="pl-10"
-                          value={loginPassword}
-                          onChange={(e) => setLoginPassword(e.target.value)}
+                          value={loginCredentials.password}
+                          onChange={handleLoginChange}
                         />
                       </div>
                     </div>
-                    {loginError && (
-                      <div className="text-sm text-red-500">{loginError}</div>
+                    {loginMutation.isError && (
+                      <div className="text-sm text-red-500">
+                        {loginMutation.error?.message || 'Login failed'}
+                      </div>
                     )}
-                    <Button type="submit" className="w-full">
-                      Sign in
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={loginMutation.isPending}
+                    >
+                      {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
                     </Button>
                   </form>
                 </CardContent>
-                <CardFooter className="flex flex-col">
-                  <div className="relative w-full mb-4">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t"></span>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={signInWithGoogle}
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-3"
-                  >
-                    <FcGoogle className="w-5 h-5" />
-                    <span>Google</span>
-                  </Button>
-                </CardFooter>
               </Card>
             </TabsContent>
             
@@ -168,30 +152,62 @@ export default function AuthPage() {
                 <CardContent>
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="name">Full Name</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input 
-                          id="register-email"
-                          type="email"
-                          placeholder="name@example.com"
+                          id="name"
+                          name="name"
+                          type="text"
+                          placeholder="John Doe"
                           className="pl-10"
-                          value={registerEmail}
-                          onChange={(e) => setRegisterEmail(e.target.value)}
+                          value={registerCredentials.name}
+                          onChange={handleRegisterChange}
                         />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
+                      <Label htmlFor="username">Username</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="username"
+                          name="username"
+                          type="text"
+                          placeholder="johndoe"
+                          className="pl-10"
+                          value={registerCredentials.username}
+                          onChange={handleRegisterChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="email"
+                          name="email"
+                          type="email"
+                          placeholder="name@example.com"
+                          className="pl-10"
+                          value={registerCredentials.email}
+                          onChange={handleRegisterChange}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password">Password</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input 
                           id="register-password"
+                          name="password"
                           type="password"
                           placeholder="••••••••"
                           className="pl-10"
-                          value={registerPassword}
-                          onChange={(e) => setRegisterPassword(e.target.value)}
+                          value={registerCredentials.password}
+                          onChange={handleRegisterChange}
                         />
                       </div>
                     </div>
@@ -201,40 +217,29 @@ export default function AuthPage() {
                         <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input 
                           id="confirm-password"
+                          name="confirmPassword"
                           type="password"
                           placeholder="••••••••"
                           className="pl-10"
-                          value={registerConfirmPassword}
-                          onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                          value={registerCredentials.confirmPassword}
+                          onChange={handleRegisterChange}
                         />
                       </div>
                     </div>
-                    {registerError && (
-                      <div className="text-sm text-red-500">{registerError}</div>
+                    {registerMutation.isError && (
+                      <div className="text-sm text-red-500">
+                        {registerMutation.error?.message || 'Registration failed'}
+                      </div>
                     )}
-                    <Button type="submit" className="w-full">
-                      Create Account
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? 'Creating Account...' : 'Create Account'}
                     </Button>
                   </form>
                 </CardContent>
-                <CardFooter className="flex flex-col">
-                  <div className="relative w-full mb-4">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t"></span>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={signInWithGoogle}
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-3"
-                  >
-                    <FcGoogle className="w-5 h-5" />
-                    <span>Google</span>
-                  </Button>
-                </CardFooter>
               </Card>
             </TabsContent>
           </Tabs>
