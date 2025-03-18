@@ -1,46 +1,48 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { adminAuth } from "./firebase-admin";
 import { z } from "zod";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
-import './types';
+import { setupAuth } from "./auth";
 
-// Authentication middleware
-async function verifyAuth(req: Request, res: Response, next: NextFunction) {
-  try {
-    const token = req.headers.authorization?.split('Bearer ')[1];
-    if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
-    }
-
-    const decodedToken = await adminAuth.verifyIdToken(token);
-    req.user = decodedToken;
-    next();
-  } catch (error) {
-    console.error('Auth error:', error);
-    res.status(401).json({ message: 'Invalid token' });
+// Authentication middleware for protected routes
+function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
   }
+  return res.status(401).json({ message: 'Not authenticated' });
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+
   // Protected routes middleware
   app.use([
     '/api/tournaments/preferred',
     '/api/profile',
     '/api/teams',
     '/api/matches'
-  ], verifyAuth);
+  ], isAuthenticated);
 
   // User profile routes
   app.get('/api/profile', async (req, res) => {
     try {
-      const user = await storage.getUserById(parseInt(req.user.uid));
+      if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+      }
+      
+      // The user object is set by passport
+      const userId = (req.user as any).id;
+      const user = await storage.getUserById(userId);
+      
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
-      res.json(user);
+      
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
     } catch (error) {
       console.error('Error fetching profile:', error);
       res.status(500).json({ message: 'Internal server error' });

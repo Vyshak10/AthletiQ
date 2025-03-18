@@ -1,166 +1,133 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { 
-  GoogleAuthProvider, 
-  signInWithPopup, 
-  onAuthStateChanged, 
-  signOut as firebaseSignOut,
-  User as FirebaseUser,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { createContext, useContext, ReactNode } from 'react';
+import { useQuery, useMutation, UseMutationResult } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 
-interface AuthContextType {
-  user: FirebaseUser | null;
-  loading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  registerWithEmail: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+// Define types for user and credentials
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string;
 }
 
-// Define credential interfaces
-export interface EmailCredentials {
+export interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  username: string;
   email: string;
   password: string;
+  confirmPassword: string;
+  name: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isLoading: boolean;
+  error: Error | null;
+  loginMutation: UseMutationResult<User, Error, LoginCredentials>;
+  logoutMutation: UseMutationResult<void, Error, void>;
+  registerMutation: UseMutationResult<User, Error, RegisterCredentials>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  
+  // Query for getting the current user
+  const {
+    data: user,
+    error,
+    isLoading,
+  } = useQuery<User | null, Error>({
+    queryKey: ['/api/user'],
+    queryFn: ({ queryKey }) => 
+      fetch(queryKey[0] as string, { credentials: 'include' })
+        .then(res => res.status === 401 ? null : res.json()),
+  });
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const signInWithGoogle = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+  // Mutation for login
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: LoginCredentials) => {
+      const res = await apiRequest('POST', '/api/login', credentials);
+      return await res.json();
+    },
+    onSuccess: (userData: User) => {
+      queryClient.setQueryData(['/api/user'], userData);
       toast({
-        title: "Success",
-        description: "Successfully signed in with Google",
+        title: "Login successful",
+        description: `Welcome back, ${userData.name}!`,
       });
-    } catch (error: any) {
-      console.error('Error signing in with Google:', error);
-      
-      let errorMessage = "Failed to sign in with Google";
-      
-      if (error.code === 'auth/api-key-not-valid') {
-        errorMessage = "Firebase API key is invalid. Please check your Firebase configuration.";
-      } else if (error.code === 'auth/popup-closed-by-user') {
-        errorMessage = "Sign-in was cancelled. Please try again.";
-      } else if (error.code === 'auth/network-request-failed') {
-        errorMessage = "Network error. Please check your internet connection.";
-      } else if (error.code) {
-        errorMessage = `Authentication error: ${error.code}`;
-      }
-      
+    },
+    onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Login failed",
+        description: error.message,
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
-  const registerWithEmail = async (email: string, password: string) => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
+  // Mutation for registration
+  const registerMutation = useMutation({
+    mutationFn: async (credentials: RegisterCredentials) => {
+      const res = await apiRequest('POST', '/api/register', credentials);
+      return await res.json();
+    },
+    onSuccess: (userData: User) => {
+      queryClient.setQueryData(['/api/user'], userData);
       toast({
-        title: "Success",
-        description: "Account created successfully",
+        title: "Registration successful",
+        description: `Welcome, ${userData.name}!`,
       });
-    } catch (error: any) {
-      console.error('Error registering with email:', error);
-      
-      let errorMessage = "Failed to register";
-      
-      if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "Email already in use. Try signing in instead.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password too weak. Use at least 6 characters.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Invalid email address.";
-      } else if (error.code) {
-        errorMessage = `Registration error: ${error.code}`;
-      }
-      
+    },
+    onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Registration failed",
+        description: error.message,
         variant: "destructive",
       });
-    }
-  };
+    },
+  });
 
-  const signInWithEmail = async (email: string, password: string) => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
+  // Mutation for logout
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('POST', '/api/logout');
+    },
+    onSuccess: () => {
+      queryClient.setQueryData(['/api/user'], null);
       toast({
-        title: "Success",
-        description: "Signed in successfully",
+        title: "Logged out",
+        description: "You have been successfully logged out",
       });
-    } catch (error: any) {
-      console.error('Error signing in with email:', error);
-      
-      let errorMessage = "Failed to sign in";
-      
-      if (error.code === 'auth/user-not-found') {
-        errorMessage = "User not found. Please check your email or register.";
-      } else if (error.code === 'auth/wrong-password') {
-        errorMessage = "Incorrect password.";
-      } else if (error.code === 'auth/invalid-email') {
-        errorMessage = "Invalid email address.";
-      } else if (error.code === 'auth/user-disabled') {
-        errorMessage = "This account has been disabled.";
-      } else if (error.code) {
-        errorMessage = `Sign-in error: ${error.code}`;
-      }
-      
+    },
+    onError: (error: Error) => {
       toast({
-        title: "Error",
-        description: errorMessage,
+        title: "Logout failed",
+        description: error.message,
         variant: "destructive",
       });
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      await firebaseSignOut(auth);
-      toast({
-        title: "Success",
-        description: "Successfully signed out",
-      });
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sign out",
-        variant: "destructive",
-      });
-    }
-  };
+    },
+  });
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      signInWithGoogle, 
-      signInWithEmail,
-      registerWithEmail,
-      signOut 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user: user || null,
+        isLoading,
+        error,
+        loginMutation,
+        registerMutation,
+        logoutMutation,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
