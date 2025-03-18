@@ -91,8 +91,8 @@ export default function CreateTournamentPage() {
     // Convert dates to ISO strings for API
     const formattedData: InsertTournament = {
       ...tournamentData as InsertTournament,
-      startDate: startDate?.toISOString() as string,
-      endDate: endDate?.toISOString(),
+      startDate: startDate ? startDate.toISOString() : new Date().toISOString(),
+      endDate: endDate ? endDate.toISOString() : undefined,
       hostId: user?.id as number
     };
 

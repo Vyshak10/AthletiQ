@@ -46,7 +46,7 @@ export default function TournamentDetailsPage() {
     tournamentId: tournamentId,
     homeTeamId: 0,
     awayTeamId: 0,
-    startTime: new Date().toISOString(),
+    startTime: new Date(),
     location: '',
     status: 'scheduled'
   });
@@ -139,7 +139,7 @@ export default function TournamentDetailsPage() {
         tournamentId: tournamentId,
         homeTeamId: 0,
         awayTeamId: 0,
-        startTime: new Date().toISOString(),
+        startTime: new Date(),
         location: tournament?.location || '',
         status: 'scheduled'
       });
@@ -504,7 +504,7 @@ export default function TournamentDetailsPage() {
                       <Input
                         id="match-date"
                         type="datetime-local"
-                        onChange={(e) => setNewMatch({ ...newMatch, startTime: e.target.value })}
+                        onChange={(e) => setNewMatch({ ...newMatch, startTime: new Date(e.target.value) })}
                         required
                       />
                     </div>
