@@ -34,17 +34,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
+      console.log('Starting Google sign-in process...');
       const provider = new GoogleAuthProvider();
+      
+      // Add some debugging to verify auth configuration
+      console.log('Firebase auth initialized:', !!auth);
+      console.log('Using Google provider...');
+      
       await signInWithPopup(auth, provider);
+      console.log('Sign in successful');
       toast({
         title: "Success",
         description: "Successfully signed in with Google",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error signing in with Google:', error);
+      
+      // More specific error messaging based on the Firebase error code
+      let errorMessage = "Failed to sign in with Google";
+      
+      if (error.code === 'auth/api-key-not-valid') {
+        errorMessage = "Firebase API key is invalid. Please check your Firebase configuration.";
+      } else if (error.code === 'auth/popup-closed-by-user') {
+        errorMessage = "Sign-in was cancelled. Please try again.";
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = "Network error. Please check your internet connection.";
+      } else if (error.code) {
+        errorMessage = `Authentication error: ${error.code}`;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to sign in with Google",
+        description: errorMessage,
         variant: "destructive",
       });
     }
