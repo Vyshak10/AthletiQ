@@ -8,10 +8,10 @@ export default function AuthPage() {
   const { user, loading, signInWithGoogle } = useAuth();
   const [, setLocation] = useLocation();
 
-  // Redirect to home if already logged in
+  // Redirect to dashboard if already logged in
   useEffect(() => {
     if (user && !loading) {
-      setLocation('/');
+      setLocation('/dashboard');
     }
   }, [user, loading, setLocation]);
 
