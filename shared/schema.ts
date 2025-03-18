@@ -256,6 +256,86 @@ export const insertPlayerStatisticSchema = createInsertSchema(playerStatistics).
 export type InsertPlayerStatistic = z.infer<typeof insertPlayerStatisticSchema>;
 export type PlayerStatistic = typeof playerStatistics.$inferSelect;
 
+// Tournament Formats schema
+export const tournamentFormats = pgTable("tournament_formats", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
+  formatType: text("format_type").notNull(), // league, knockout, group_stage_knockout
+  numberOfGroups: integer("number_of_groups"),
+  teamsPerGroup: integer("teams_per_group"),
+  matchesPerTeam: integer("matches_per_team"),
+  advancingTeams: integer("advancing_teams"),
+  thirdPlaceMatch: boolean("third_place_match").default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const insertTournamentFormatSchema = createInsertSchema(tournamentFormats).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTournamentFormat = z.infer<typeof insertTournamentFormatSchema>;
+export type TournamentFormat = typeof tournamentFormats.$inferSelect;
+
+// Tournament Admin Actions schema to track permissions
+export const tournamentAdminActions = pgTable("tournament_admin_actions", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
+  userId: integer("user_id").notNull().references(() => users.id),
+  actionType: text("action_type").notNull(), // add_team, remove_team, update_score, reschedule, etc.
+  entityId: integer("entity_id"), // ID of affected team, match, etc.
+  details: text("details"),
+  timestamp: timestamp("timestamp").notNull().defaultNow(),
+});
+
+export const insertTournamentAdminActionSchema = createInsertSchema(tournamentAdminActions).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertTournamentAdminAction = z.infer<typeof insertTournamentAdminActionSchema>;
+export type TournamentAdminAction = typeof tournamentAdminActions.$inferSelect;
+
+// Tournament Groups schema (for group stage tournaments)
+export const tournamentGroups = pgTable("tournament_groups", {
+  id: serial("id").primaryKey(),
+  tournamentId: integer("tournament_id").notNull().references(() => tournaments.id),
+  name: text("name").notNull(), // e.g., "Group A", "Group B"
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    tournamentGroupNameIdx: uniqueIndex("tournament_group_name_idx").on(table.tournamentId, table.name),
+  };
+});
+
+export const insertTournamentGroupSchema = createInsertSchema(tournamentGroups).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTournamentGroup = z.infer<typeof insertTournamentGroupSchema>;
+export type TournamentGroup = typeof tournamentGroups.$inferSelect;
+
+// Tournament Group Teams schema
+export const tournamentGroupTeams = pgTable("tournament_group_teams", {
+  id: serial("id").primaryKey(),
+  groupId: integer("group_id").notNull().references(() => tournamentGroups.id),
+  teamId: integer("team_id").notNull().references(() => teams.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (table) => {
+  return {
+    groupTeamIdx: uniqueIndex("group_team_idx").on(table.groupId, table.teamId),
+  };
+});
+
+export const insertTournamentGroupTeamSchema = createInsertSchema(tournamentGroupTeams).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTournamentGroupTeam = z.infer<typeof insertTournamentGroupTeamSchema>;
+export type TournamentGroupTeam = typeof tournamentGroupTeams.$inferSelect;
+
 // Authentication schema for storing refresh tokens
 export const refreshTokens = pgTable("refresh_tokens", {
   id: serial("id").primaryKey(),
