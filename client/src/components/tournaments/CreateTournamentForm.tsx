@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -126,9 +126,107 @@ export function CreateTournamentForm() {
     resolver: zodResolver(tournamentSchema),
     defaultValues: {
       sport: 'football',
-      status: 'draft',
+      format: '11s',
+      max_players_per_team: 11,
+      min_players_per_team: 7,
+      max_substitutes: 3,
+      match_duration: 90,
+      half_time_duration: 15,
+      extra_time_duration: 30,
+      penalty_shootout: true,
+      offside_rule: true,
+      throw_in_rule: true,
+      corner_kick_rule: true,
+      free_kick_rule: true,
     },
   })
+
+  const sport = form.watch('sport')
+
+  useEffect(() => {
+    switch (sport) {
+      case 'football':
+        form.reset({
+          ...form.getValues(),
+          format: '11s',
+          max_players_per_team: 11,
+          min_players_per_team: 7,
+          max_substitutes: 3,
+          match_duration: 90,
+          half_time_duration: 15,
+          extra_time_duration: 30,
+          penalty_shootout: true,
+          offside_rule: true,
+          throw_in_rule: true,
+          corner_kick_rule: true,
+          free_kick_rule: true,
+        })
+        break
+
+      case 'basketball':
+        form.reset({
+          ...form.getValues(),
+          format: '5v5',
+          max_players_per_team: 5,
+          min_players_per_team: 5,
+          max_substitutes: 7,
+          quarter_duration: 12,
+          break_duration: 2,
+          overtime_duration: 5,
+          shot_clock: 24,
+          three_point_line: true,
+          free_throw_line: true,
+        })
+        break
+
+      case 'volleyball':
+        form.reset({
+          ...form.getValues(),
+          format: 'indoor',
+          max_players_per_team: 6,
+          min_players_per_team: 6,
+          max_substitutes: 6,
+          sets_to_win: 3,
+          points_per_set: 25,
+          points_to_win_set: 25,
+          points_to_win_tiebreak: 15,
+          libero_allowed: true,
+          rotation_rule: true,
+        })
+        break
+
+      case 'cricket':
+        form.reset({
+          ...form.getValues(),
+          format: 't20',
+          max_players_per_team: 11,
+          min_players_per_team: 11,
+          max_substitutes: 4,
+          overs_per_innings: 20,
+          super_over: true,
+          power_play: true,
+          drs: true,
+          no_ball_rule: true,
+          wide_ball_rule: true,
+        })
+        break
+
+      case 'tennis':
+        form.reset({
+          ...form.getValues(),
+          format: 'singles',
+          max_players_per_team: 1,
+          min_players_per_team: 1,
+          sets_to_win: 2,
+          games_per_set: 6,
+          tiebreak_at: 6,
+          super_tiebreak: true,
+          let_rule: true,
+          advantage_rule: true,
+        })
+        break
+    }
+  }, [sport])
 
   const onSubmit = async (data: TournamentFormData) => {
     if (!user) return
@@ -168,7 +266,7 @@ export function CreateTournamentForm() {
     switch (sport) {
       case 'football':
         return (
-          <>
+          <div className="space-y-6">
             <FormField
               control={form.control}
               name="format"
@@ -192,13 +290,190 @@ export function CreateTournamentForm() {
                 </FormItem>
               )}
             />
-            {/* Add other football-specific fields */}
-          </>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="max_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={6} max={11} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="min_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={6} max={11} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_substitutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Substitutes</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={0} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="match_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Match Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={30} max={120} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="half_time_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Half-time Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={5} max={15} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="extra_time_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Extra Time Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={5} max={30} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="penalty_shootout"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Penalty Shootout</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="offside_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Offside Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="throw_in_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Throw-in Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="corner_kick_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Corner Kick Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="free_kick_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Free Kick Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
         )
 
       case 'basketball':
         return (
-          <>
+          <div className="space-y-6">
             <FormField
               control={form.control}
               name="format"
@@ -220,11 +495,645 @@ export function CreateTournamentForm() {
                 </FormItem>
               )}
             />
-            {/* Add other basketball-specific fields */}
-          </>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="max_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={3} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="min_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={3} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_substitutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Substitutes</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={0} max={7} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="quarter_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Quarter Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={5} max={12} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="break_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Break Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="overtime_duration"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Overtime Duration (minutes)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={3} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="shot_clock"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Shot Clock (seconds)</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={14} max={30} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="three_point_line"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Three Point Line</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="free_throw_line"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Free Throw Line</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
         )
 
-      // Add cases for other sports...
+      case 'volleyball':
+        return (
+          <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="format"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Format</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="indoor">Indoor</SelectItem>
+                      <SelectItem value="beach">Beach</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="max_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={6} max={6} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="min_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={6} max={6} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_substitutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Substitutes</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={0} max={6} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sets_to_win"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sets to Win</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={2} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="points_per_set"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Points per Set</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={15} max={25} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="points_to_win_set"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Points to Win Set</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={15} max={25} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="points_to_win_tiebreak"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Points to Win Tiebreak</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={15} max={15} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="libero_allowed"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Libero Allowed</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="rotation_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Rotation Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        )
+
+      case 'cricket':
+        return (
+          <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="format"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Format</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="t20">T20</SelectItem>
+                      <SelectItem value="one_day">One Day</SelectItem>
+                      <SelectItem value="test">Test</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="max_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={11} max={11} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="min_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={11} max={11} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_substitutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Substitutes</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={0} max={4} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="overs_per_innings"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Overs per Innings</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={20} max={50} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="super_over"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Super Over</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="power_play"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Power Play</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="drs"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">DRS</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="no_ball_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">No Ball Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="wide_ball_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Wide Ball Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        )
+
+      case 'tennis':
+        return (
+          <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="format"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Format</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select format" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="singles">Singles</SelectItem>
+                      <SelectItem value="doubles">Doubles</SelectItem>
+                      <SelectItem value="mixed_doubles">Mixed Doubles</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="max_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} max={2} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="min_players_per_team"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Min Players per Team</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={1} max={2} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="sets_to_win"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sets to Win</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={2} max={5} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="games_per_set"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Games per Set</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={6} max={6} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="tiebreak_at"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tiebreak at Games</FormLabel>
+                    <FormControl>
+                      <Input type="number" min={6} max={6} {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="super_tiebreak"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Super Tiebreak</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="let_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Let Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="advantage_rule"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Advantage Rule</FormLabel>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+        )
 
       default:
         return null
@@ -234,6 +1143,20 @@ export function CreateTournamentForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tournament Name</FormLabel>
+              <FormControl>
+                <Input placeholder="Enter tournament name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="sport"
@@ -259,35 +1182,7 @@ export function CreateTournamentForm() {
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Tournament Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter tournament name" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Enter tournament description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
             name="start_date"
@@ -316,6 +1211,24 @@ export function CreateTournamentForm() {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Description</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Enter tournament description"
+                  className="min-h-[100px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {renderSportSpecificFields()}
 

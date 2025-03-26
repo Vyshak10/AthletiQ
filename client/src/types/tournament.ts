@@ -1,12 +1,15 @@
 export type SportType = 'football' | 'basketball' | 'volleyball' | 'cricket' | 'tennis'
 
+export type TournamentStatus = 'draft' | 'active' | 'completed' | 'cancelled'
+
 export interface BaseTournament {
   id: string
   name: string
   sport: SportType
+  format: string
   start_date: string
   end_date: string
-  status: 'draft' | 'active' | 'completed' | 'cancelled'
+  status: TournamentStatus
   created_by: string
   description: string
   created_at: string
@@ -76,8 +79,8 @@ export interface TennisTournament extends BaseTournament {
   format: 'singles' | 'doubles' | 'mixed_doubles'
   max_players_per_team: number
   min_players_per_team: number
-  sets_to_win: number
   games_per_set: number
+  sets_to_win: number
   tiebreak_at: number
   super_tiebreak: boolean
   let_rule: boolean

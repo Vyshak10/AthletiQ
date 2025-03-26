@@ -1,9 +1,31 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from './database.types'
 
-const supabaseUrl = 'https://hxxqfltowzaeatidecam.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh4eHFmbHRvd3phZWF0aWRlY2FtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI4OTA1MjgsImV4cCI6MjA1ODQ2NjUyOH0.EdZxkKr0YYt1Qqp8OTOIIgdZSt5lD9TirG01Qyo0CbU'
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.')
+}
+
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+})
+
+// Add error logging for auth state changes
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('Supabase auth event:', event)
+  if (event === 'SIGNED_OUT') {
+    console.log('User signed out')
+  } else if (event === 'SIGNED_IN') {
+    console.log('User signed in:', session?.user?.email)
+  } else if (event === 'TOKEN_REFRESHED') {
+    console.log('Token refreshed')
+  }
+})
 
 export type { User } from '@supabase/supabase-js' 
