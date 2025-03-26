@@ -1,273 +1,141 @@
-import { useEffect, useState } from 'react';
-import { useLocation } from 'wouter';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth, RegisterCredentials, LoginCredentials } from '@/hooks/use-auth';
-import { FcGoogle } from 'react-icons/fc';
-import { Mail, Lock, User } from 'lucide-react';
+import { useState } from 'react'
+import { useAuth } from '@/hooks/use-auth'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Label } from '@/components/ui/label'
+import { useNavigate } from 'wouter'
 
 export default function AuthPage() {
-  const { user, isLoading, loginMutation, registerMutation } = useAuth();
-  const [, setLocation] = useLocation();
-  
-  // Form states
-  const [loginCredentials, setLoginCredentials] = useState<LoginCredentials>({
-    username: '',
-    password: ''
-  });
-  
-  const [registerCredentials, setRegisterCredentials] = useState<RegisterCredentials>({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    name: ''
-  });
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const { signIn, signUp, resetPassword } = useAuth()
+  const [, navigate] = useNavigate()
 
-  // Redirect to home if already logged in
-  useEffect(() => {
-    if (user && !isLoading) {
-      setLocation('/');
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      await signIn(email, password)
+      navigate('/dashboard')
+    } catch (error) {
+      console.error('Sign in error:', error)
+    } finally {
+      setIsLoading(false)
     }
-  }, [user, isLoading, setLocation]);
+  }
 
-  const handleLoginChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setLoginCredentials(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      await signUp(email, password)
+      // Note: User will need to verify their email
+    } catch (error) {
+      console.error('Sign up error:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setRegisterCredentials(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate(loginCredentials);
-  };
-
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    registerMutation.mutate(registerCredentials);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    try {
+      await resetPassword(email)
+    } catch (error) {
+      console.error('Reset password error:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left column - Auth form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <h2 className="mt-6 text-3xl font-bold text-gray-900">
-              Welcome to SportSync
-            </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Your all-in-one tournament management platform
-            </p>
-          </div>
-
-          <Tabs defaultValue="login" className="w-full mt-8">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Welcome</CardTitle>
+          <CardDescription>Sign in to your account or create a new one</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Login</TabsTrigger>
-              <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsTrigger value="signin">Sign In</TabsTrigger>
+              <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
-            
-            <TabsContent value="login">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Login</CardTitle>
-                  <CardDescription>Sign in to your SportSync account</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username or Email</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="username"
-                          name="username"
-                          type="text"
-                          placeholder="username or email"
-                          className="pl-10"
-                          value={loginCredentials.username}
-                          onChange={handleLoginChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="password"
-                          name="password"
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          value={loginCredentials.password}
-                          onChange={handleLoginChange}
-                        />
-                      </div>
-                    </div>
-                    {loginMutation.isError && (
-                      <div className="text-sm text-red-500">
-                        {loginMutation.error?.message || 'Login failed'}
-                      </div>
-                    )}
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      disabled={loginMutation.isPending}
-                    >
-                      {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+            <TabsContent value="signin">
+              <form onSubmit={handleSignIn} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </Button>
+              </form>
             </TabsContent>
-            
-            <TabsContent value="register">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
-                  <CardDescription>Register for a SportSync account</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handleRegister} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="name"
-                          name="name"
-                          type="text"
-                          placeholder="John Doe"
-                          className="pl-10"
-                          value={registerCredentials.name}
-                          onChange={handleRegisterChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="username"
-                          name="username"
-                          type="text"
-                          placeholder="johndoe"
-                          className="pl-10"
-                          value={registerCredentials.username}
-                          onChange={handleRegisterChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="email"
-                          name="email"
-                          type="email"
-                          placeholder="name@example.com"
-                          className="pl-10"
-                          value={registerCredentials.email}
-                          onChange={handleRegisterChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="register-password">Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="register-password"
-                          name="password"
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          value={registerCredentials.password}
-                          onChange={handleRegisterChange}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <div className="relative">
-                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="confirm-password"
-                          name="confirmPassword"
-                          type="password"
-                          placeholder="••••••••"
-                          className="pl-10"
-                          value={registerCredentials.confirmPassword}
-                          onChange={handleRegisterChange}
-                        />
-                      </div>
-                    </div>
-                    {registerMutation.isError && (
-                      <div className="text-sm text-red-500">
-                        {registerMutation.error?.message || 'Registration failed'}
-                      </div>
-                    )}
-                    <Button 
-                      type="submit" 
-                      className="w-full"
-                      disabled={registerMutation.isPending}
-                    >
-                      {registerMutation.isPending ? 'Creating Account...' : 'Create Account'}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
+            <TabsContent value="signup">
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email</Label>
+                  <Input
+                    id="signup-email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <Input
+                    id="signup-password"
+                    type="password"
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creating account...' : 'Create Account'}
+                </Button>
+              </form>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
-
-      {/* Right column - Hero section */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-primary/80 to-primary items-center justify-center p-8">
-        <div className="max-w-md text-white">
-          <h1 className="text-4xl font-bold mb-6">
-            Manage Sports Tournaments with Ease
-          </h1>
-          <ul className="space-y-4">
-            <li className="flex items-center gap-2">
-              • Real-time match updates and statistics
-            </li>
-            <li className="flex items-center gap-2">
-              • Comprehensive team and player management
-            </li>
-            <li className="flex items-center gap-2">
-              • Multi-sport tournament support
-            </li>
-            <li className="flex items-center gap-2">
-              • Live leaderboards and analytics
-            </li>
-          </ul>
-        </div>
-      </div>
+        </CardContent>
+        <CardFooter>
+          <Button
+            variant="link"
+            className="w-full"
+            onClick={handleResetPassword}
+            disabled={isLoading || !email}
+          >
+            Forgot password?
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
-  );
+  )
 }

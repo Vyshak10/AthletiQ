@@ -18,6 +18,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication
   setupAuth(app);
 
+  // Auth routes
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { email, password, name } = req.body;
+
+      // Validate input
+      if (!email || !password || !name) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email already registered' });
+      }
+
+      // Create user
+      const user = await storage.createUser({
+        email,
+        password,
+        name,
+      });
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+
+      // Generate JWT token
+      const token = 'dummy-token'; // TODO: Implement proper JWT token generation
+
+      res.status(201).json({
+        user: userWithoutPassword,
+        token,
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { email, password } = req.body;
+
+      // Validate input
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+
+      // Find user
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Verify password
+      const isValidPassword = await storage.comparePasswords(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+
+      // Generate JWT token
+      const token = 'dummy-token'; // TODO: Implement proper JWT token generation
+
+      res.json({
+        user: userWithoutPassword,
+        token,
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
+  app.post('/api/auth/logout', isAuthenticated, async (req, res) => {
+    try {
+      // TODO: Implement proper token invalidation
+      res.json({ message: 'Logged out successfully' });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
+  });
+
   // Protected routes middleware
   app.use([
     '/api/tournaments/preferred',

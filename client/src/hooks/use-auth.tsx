@@ -1,142 +1,165 @@
-import { createContext, useContext, ReactNode } from 'react';
-import { useQuery, useMutation, UseMutationResult } from '@tanstack/react-query';
-import { useToast } from '@/hooks/use-toast';
-import { apiRequest, queryClient } from '@/lib/queryClient';
-
-// Define types for user and credentials
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  name: string;
-  role: string;
-  createdAt: string;
-}
-
-export interface LoginCredentials {
-  username: string;
-  password: string;
-}
-
-export interface RegisterCredentials {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  name: string;
-}
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { User, AuthError } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
 
 interface AuthContextType {
-  user: User | null;
-  isLoading: boolean;
-  error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginCredentials>;
-  logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<User, Error, RegisterCredentials>;
+  user: User | null
+  loading: boolean
+  signIn: (email: string, password: string) => Promise<void>
+  signUp: (email: string, password: string) => Promise<void>
+  signOut: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
+  updatePassword: (password: string) => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
-  
-  // Query for getting the current user
-  const {
-    data: user,
-    error,
-    isLoading,
-  } = useQuery<User | null, Error>({
-    queryKey: ['/api/user'],
-    queryFn: ({ queryKey }) => 
-      fetch(queryKey[0] as string, { credentials: 'include' })
-        .then(res => res.status === 401 ? null : res.json()),
-  });
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  const { toast } = useToast()
 
-  // Mutation for login
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginCredentials) => {
-      const res = await apiRequest('POST', '/api/login', credentials);
-      return await res.json();
-    },
-    onSuccess: (userData: User) => {
-      queryClient.setQueryData(['/api/user'], userData);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${userData.name}!`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  useEffect(() => {
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
-  // Mutation for registration
-  const registerMutation = useMutation({
-    mutationFn: async (credentials: RegisterCredentials) => {
-      const res = await apiRequest('POST', '/api/register', credentials);
-      return await res.json();
-    },
-    onSuccess: (userData: User) => {
-      queryClient.setQueryData(['/api/user'], userData);
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${userData.name}!`,
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Registration failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
-  // Mutation for logout
-  const logoutMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest('POST', '/api/logout');
-    },
-    onSuccess: () => {
-      queryClient.setQueryData(['/api/user'], null);
+    return () => subscription.unsubscribe()
+  }, [])
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (error) throw error
       toast({
-        title: "Logged out",
-        description: "You have been successfully logged out",
-      });
-    },
-    onError: (error: Error) => {
+        title: "Success",
+        description: "Successfully signed in!",
+      })
+    } catch (error) {
+      const authError = error as AuthError
       toast({
-        title: "Logout failed",
-        description: error.message,
+        title: "Error",
+        description: authError.message,
         variant: "destructive",
-      });
-    },
-  });
+      })
+      throw error
+    }
+  }
+
+  const signUp = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      })
+      if (error) throw error
+      toast({
+        title: "Success",
+        description: "Check your email to confirm your account!",
+      })
+    } catch (error) {
+      const authError = error as AuthError
+      toast({
+        title: "Error",
+        description: authError.message,
+        variant: "destructive",
+      })
+      throw error
+    }
+  }
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      toast({
+        title: "Success",
+        description: "Successfully signed out!",
+      })
+    } catch (error) {
+      const authError = error as AuthError
+      toast({
+        title: "Error",
+        description: authError.message,
+        variant: "destructive",
+      })
+      throw error
+    }
+  }
+
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email)
+      if (error) throw error
+      toast({
+        title: "Success",
+        description: "Check your email for the password reset link!",
+      })
+    } catch (error) {
+      const authError = error as AuthError
+      toast({
+        title: "Error",
+        description: authError.message,
+        variant: "destructive",
+      })
+      throw error
+    }
+  }
+
+  const updatePassword = async (password: string) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      })
+      if (error) throw error
+      toast({
+        title: "Success",
+        description: "Password updated successfully!",
+      })
+    } catch (error) {
+      const authError = error as AuthError
+      toast({
+        title: "Error",
+        description: authError.message,
+        variant: "destructive",
+      })
+      throw error
+    }
+  }
 
   return (
     <AuthContext.Provider
       value={{
-        user: user || null,
-        isLoading,
-        error,
-        loginMutation,
-        registerMutation,
-        logoutMutation,
+        user,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        resetPassword,
+        updatePassword,
       }}
     >
       {children}
     </AuthContext.Provider>
-  );
+  )
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
   }
-  return context;
-}
+  return context
+} 

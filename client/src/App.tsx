@@ -1,40 +1,113 @@
-import { Switch, Route } from 'wouter';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/hooks/use-auth';
-import AuthPage from '@/pages/auth-page';
-import HomePage from '@/pages/home-page';
-import LandingPage from '@/pages/landing-page';
-import CreateTournamentPage from '@/pages/create-tournament-page';
-import TournamentDetailsPage from '@/pages/tournament-details-page';
-import TeamDetailsPage from '@/pages/team-details-page';
-import MatchDetailsPage from '@/pages/match-details-page';
-import NotFound from '@/pages/not-found';
-import { ProtectedRoute } from '@/lib/protected-route';
-import { queryClient } from '@/lib/queryClient';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { ThemeProvider } from './contexts/ThemeContext'
+import { AuthProvider } from './contexts/AuthContext'
+import { Toaster } from './components/ui/toaster'
+import { Navbar } from './components/Navbar'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { Home } from './pages/Home'
+import { Login } from './pages/Login'
+import { Register } from './pages/Register'
+import { Profile } from './pages/Profile'
+import { Tournaments } from './pages/Tournaments'
+import { CreateTournament } from './pages/CreateTournament'
+import { ManageTournaments } from './pages/ManageTournaments'
+import { TournamentDetails } from './pages/TournamentDetails'
+import { TournamentStatistics } from './pages/TournamentStatistics'
+import { Settings } from './pages/Settings'
+import { MatchManagement } from './pages/MatchManagement'
+import { TeamManagement } from './pages/TeamManagement'
+import { MatchSchedule } from './pages/MatchSchedule'
 
-function Router() {
+function AppRoutes() {
   return (
-    <Switch>
-      <Route path="/" component={LandingPage} />
-      <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/dashboard" component={HomePage} />
-      <ProtectedRoute path="/tournaments/create" component={CreateTournamentPage} />
-      <ProtectedRoute path="/tournaments/:id" component={TournamentDetailsPage} />
-      <ProtectedRoute path="/teams/:id" component={TeamDetailsPage} />
-      <ProtectedRoute path="/matches/:id" component={MatchDetailsPage} />
-      <Route component={NotFound} />
-    </Switch>
-  );
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/tournaments" element={<Tournaments />} />
+      <Route
+        path="/tournaments/create"
+        element={
+          <ProtectedRoute>
+            <CreateTournament />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tournaments/manage"
+        element={
+          <ProtectedRoute>
+            <ManageTournaments />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/tournaments/:id" element={<TournamentDetails />} />
+      <Route
+        path="/tournaments/:id/statistics"
+        element={
+          <ProtectedRoute>
+            <TournamentStatistics />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tournaments/:id/matches"
+        element={
+          <ProtectedRoute>
+            <MatchManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tournaments/:id/teams"
+        element={
+          <ProtectedRoute>
+            <TeamManagement />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tournaments/:id/schedule"
+        element={
+          <ProtectedRoute>
+            <MatchSchedule />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  )
 }
 
-export default function App() {
+export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
-  );
+    <Router>
+      <ThemeProvider>
+        <AuthProvider>
+          <div className="min-h-screen bg-background text-foreground">
+            <Navbar />
+            <main>
+              <AppRoutes />
+            </main>
+            <Toaster />
+          </div>
+        </AuthProvider>
+      </ThemeProvider>
+    </Router>
+  )
 }

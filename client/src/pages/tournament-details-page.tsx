@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -224,412 +224,412 @@ export default function TournamentDetailsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold">{tournament.name}</h1>
-            <Badge variant={
-              tournament.status === 'upcoming' ? 'outline' :
-              tournament.status === 'active' ? 'default' : 'secondary'
-            }>
-              {tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}
-            </Badge>
-          </div>
-          <div className="flex flex-wrap gap-4 mt-2 text-muted-foreground">
-            {sport && (
-              <div className="flex items-center gap-1">
-                <Trophy className="h-4 w-4" />
-                <span>{sport.name}</span>
-              </div>
-            )}
-            {tournament.location && (
-              <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
-                <span>{tournament.location}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-1">
-              <CalendarDays className="h-4 w-4" />
-              <span>{new Date(tournament.startDate).toLocaleDateString()}</span>
-              {tournament.endDate && (
-                <span> - {new Date(tournament.endDate).toLocaleDateString()}</span>
-              )}
-            </div>
-          </div>
-        </div>
-        
-        {isHost && (
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Edit className="h-4 w-4 mr-1" />
-              Edit Tournament
-            </Button>
-            <Button size="sm">
-              <Shield className="h-4 w-4 mr-1" />
-              Admin Panel
-            </Button>
-          </div>
-        )}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>{tournament.name}</CardTitle>
+          <CardDescription>
+            {tournament.sport} • {new Date(tournament.startDate).toLocaleDateString()} -{' '}
+            {new Date(tournament.endDate).toLocaleDateString()}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="overview" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="teams">Teams</TabsTrigger>
+              <TabsTrigger value="matches">Matches</TabsTrigger>
+              {isHost && <TabsTrigger value="settings">Settings</TabsTrigger>}
+            </TabsList>
 
-      {tournament.description && (
-        <Card className="mb-8">
-          <CardContent className="pt-6">
-            <p>{tournament.description}</p>
-          </CardContent>
-        </Card>
-      )}
-
-      <Tabs defaultValue="teams" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
-          <TabsTrigger value="matches">Matches</TabsTrigger>
-          <TabsTrigger value="standings">Standings</TabsTrigger>
-          <TabsTrigger value="stats">Statistics</TabsTrigger>
-        </TabsList>
-
-        {/* Teams Tab */}
-        <TabsContent value="teams" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Participating Teams</h2>
-            {isHost && (
-              <Dialog open={addTeamOpen} onOpenChange={setAddTeamOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <UserPlus className="h-4 w-4 mr-1" />
-                    Add Team
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Team to Tournament</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleAddTeam} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="team-name">Team Name</Label>
-                      <Input
-                        id="team-name"
-                        value={newTeam.name}
-                        onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-                        placeholder="Enter team name"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="team-logo">Logo URL (optional)</Label>
-                      <Input
-                        id="team-logo"
-                        value={newTeam.logo || ''}
-                        onChange={(e) => setNewTeam({ ...newTeam, logo: e.target.value })}
-                        placeholder="Enter logo URL"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                      <DialogClose asChild>
-                        <Button variant="outline" type="button">Cancel</Button>
-                      </DialogClose>
-                      <Button 
-                        type="submit"
-                        disabled={addTeamMutation.isPending}
-                      >
-                        {addTeamMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                        ) : null}
-                        Add Team
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-          
-          {loadingTeams ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : !teams?.length ? (
-            <div className="text-center p-8 border rounded-lg bg-muted/20">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground" />
-              <p className="mt-2 text-muted-foreground">No teams have joined this tournament yet.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teams.map((team) => (
-                <Card key={team.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{team.name}</CardTitle>
-                      {isHost && (
-                        <Dialog open={addPlayerOpen && selectedTeamId === team.id} onOpenChange={(open) => {
-                          setAddPlayerOpen(open);
-                          if (open) setSelectedTeamId(team.id);
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Add Player to {team.name}</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={handleAddPlayer} className="space-y-4 pt-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="player-name">Player Name</Label>
-                                <Input
-                                  id="player-name"
-                                  value={newPlayer.name}
-                                  onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
-                                  placeholder="Enter player name"
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="player-position">Position</Label>
-                                <Input
-                                  id="player-position"
-                                  value={newPlayer.position}
-                                  onChange={(e) => setNewPlayer({ ...newPlayer, position: e.target.value })}
-                                  placeholder="Enter player position"
-                                  required
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="player-number">Jersey Number</Label>
-                                <Input
-                                  id="player-number"
-                                  type="number"
-                                  value={newPlayer.jerseyNumber || ''}
-                                  onChange={(e) => setNewPlayer({ 
-                                    ...newPlayer, 
-                                    jerseyNumber: e.target.value ? parseInt(e.target.value) : undefined 
-                                  })}
-                                  placeholder="Enter jersey number"
-                                />
-                              </div>
-                              <div className="flex justify-end gap-2 pt-2">
-                                <DialogClose asChild>
-                                  <Button variant="outline" type="button">Cancel</Button>
-                                </DialogClose>
-                                <Button 
-                                  type="submit"
-                                  disabled={addPlayerMutation.isPending}
-                                >
-                                  {addPlayerMutation.isPending ? (
-                                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                                  ) : null}
-                                  Add Player
-                                </Button>
-                              </div>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
-                      )}
-                    </div>
+            <TabsContent value="overview" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Teams</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href={`/teams/${team.id}`}>View Roster</Link>
-                    </Button>
+                    <p className="text-2xl font-bold">{teams.length}</p>
+                    <p className="text-sm text-muted-foreground">
+                      of {tournament.settings.numberOfTeams} registered
+                    </p>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
 
-        {/* Matches Tab */}
-        <TabsContent value="matches" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Scheduled Matches</h2>
-            {isHost && teams && teams.length >= 2 && (
-              <Dialog open={addMatchOpen} onOpenChange={setAddMatchOpen}>
-                <DialogTrigger asChild>
-                  <Button size="sm">
-                    <CalendarPlus className="h-4 w-4 mr-1" />
-                    Schedule Match
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Schedule a Match</DialogTitle>
-                  </DialogHeader>
-                  <form onSubmit={handleAddMatch} className="space-y-4 pt-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="home-team">Home Team</Label>
-                      <Select 
-                        value={newMatch.homeTeamId?.toString() || ''} 
-                        onValueChange={(value) => setNewMatch({ ...newMatch, homeTeamId: parseInt(value) })}
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select home team" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teams.map(team => (
-                            <SelectItem key={`home-${team.id}`} value={team.id.toString()}>
-                              {team.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="away-team">Away Team</Label>
-                      <Select 
-                        value={newMatch.awayTeamId?.toString() || ''} 
-                        onValueChange={(value) => setNewMatch({ ...newMatch, awayTeamId: parseInt(value) })}
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select away team" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {teams.map(team => (
-                            <SelectItem key={`away-${team.id}`} value={team.id.toString()}>
-                              {team.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="match-date">Match Date & Time</Label>
-                      <Input
-                        id="match-date"
-                        type="datetime-local"
-                        onChange={(e) => setNewMatch({ ...newMatch, startTime: new Date(e.target.value) })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="match-location">Location</Label>
-                      <Input
-                        id="match-location"
-                        value={newMatch.location || ''}
-                        onChange={(e) => setNewMatch({ ...newMatch, location: e.target.value })}
-                        placeholder="Enter match location"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2 pt-2">
-                      <DialogClose asChild>
-                        <Button variant="outline" type="button">Cancel</Button>
-                      </DialogClose>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Matches</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold">{matches.length}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {matches.filter(m => m.status === 'completed').length} completed
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Status</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold capitalize">{tournament.status}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {tournament.status === 'upcoming' && 'Tournament not started'}
+                      {tournament.status === 'in_progress' && 'Tournament in progress'}
+                      {tournament.status === 'completed' && 'Tournament completed'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Description</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="whitespace-pre-wrap">{tournament.description}</p>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="teams">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Registered Teams</h3>
+                {isHost && (
+                  <Dialog open={addTeamOpen} onOpenChange={setAddTeamOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <UserPlus className="h-4 w-4 mr-1" />
+                        Add Team
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Add Team to Tournament</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleAddTeam} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="team-name">Team Name</Label>
+                          <Input
+                            id="team-name"
+                            value={newTeam.name}
+                            onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
+                            placeholder="Enter team name"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="team-logo">Logo URL (optional)</Label>
+                          <Input
+                            id="team-logo"
+                            value={newTeam.logo || ''}
+                            onChange={(e) => setNewTeam({ ...newTeam, logo: e.target.value })}
+                            placeholder="Enter logo URL"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                          <DialogClose asChild>
+                            <Button variant="outline" type="button">Cancel</Button>
+                          </DialogClose>
+                          <Button 
+                            type="submit"
+                            disabled={addTeamMutation.isPending}
+                          >
+                            {addTeamMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : null}
+                            Add Team
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {teams.map((team) => (
+                  <Card key={team.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg">{team.name}</CardTitle>
+                        {isHost && (
+                          <Dialog open={addPlayerOpen && selectedTeamId === team.id} onOpenChange={(open) => {
+                            setAddPlayerOpen(open);
+                            if (open) setSelectedTeamId(team.id);
+                          }}>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <UserPlus className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Add Player to {team.name}</DialogTitle>
+                              </DialogHeader>
+                              <form onSubmit={handleAddPlayer} className="space-y-4 pt-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="player-name">Player Name</Label>
+                                  <Input
+                                    id="player-name"
+                                    value={newPlayer.name}
+                                    onChange={(e) => setNewPlayer({ ...newPlayer, name: e.target.value })}
+                                    placeholder="Enter player name"
+                                    required
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="player-position">Position</Label>
+                                  <Input
+                                    id="player-position"
+                                    value={newPlayer.position}
+                                    onChange={(e) => setNewPlayer({ ...newPlayer, position: e.target.value })}
+                                    placeholder="Enter player position"
+                                    required
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="player-number">Jersey Number</Label>
+                                  <Input
+                                    id="player-number"
+                                    type="number"
+                                    value={newPlayer.jerseyNumber || ''}
+                                    onChange={(e) => setNewPlayer({ 
+                                      ...newPlayer, 
+                                      jerseyNumber: e.target.value ? parseInt(e.target.value) : undefined 
+                                    })}
+                                    placeholder="Enter jersey number"
+                                  />
+                                </div>
+                                <div className="flex justify-end gap-2 pt-2">
+                                  <DialogClose asChild>
+                                    <Button variant="outline" type="button">Cancel</Button>
+                                  </DialogClose>
+                                  <Button 
+                                    type="submit"
+                                    disabled={addPlayerMutation.isPending}
+                                  >
+                                    {addPlayerMutation.isPending ? (
+                                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                    ) : null}
+                                    Add Player
+                                  </Button>
+                                </div>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                        )}
+                      </div>
+                    </CardHeader>
+                    <CardContent>
                       <Button 
-                        type="submit"
-                        disabled={addMatchMutation.isPending}
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        asChild
                       >
-                        {addMatchMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                        ) : null}
+                        <Link href={`/teams/${team.id}`}>View Roster</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="matches">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Matches</h3>
+                {isHost && (
+                  <Dialog open={addMatchOpen} onOpenChange={setAddMatchOpen}>
+                    <DialogTrigger asChild>
+                      <Button size="sm">
+                        <CalendarPlus className="h-4 w-4 mr-1" />
                         Schedule Match
                       </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-          
-          {loadingMatches ? (
-            <div className="flex justify-center p-8">
-              <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            </div>
-          ) : !matches?.length ? (
-            <div className="text-center p-8 border rounded-lg bg-muted/20">
-              <Clock className="h-12 w-12 mx-auto text-muted-foreground" />
-              <p className="mt-2 text-muted-foreground">No matches have been scheduled yet.</p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Teams</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {matches.map((match) => {
-                    const homeTeam = teams?.find(team => team.id === match.homeTeamId);
-                    const awayTeam = teams?.find(team => team.id === match.awayTeamId);
-                    
-                    return (
-                      <TableRow key={match.id}>
-                        <TableCell className="font-medium">
-                          {new Date(match.startTime).toLocaleDateString()}<br/>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="font-medium">{homeTeam?.name}</div>
-                          <div className="font-medium">vs</div>
-                          <div className="font-medium">{awayTeam?.name}</div>
-                        </TableCell>
-                        <TableCell>{match.location}</TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            match.status === 'scheduled' ? 'outline' :
-                            match.status === 'in_progress' ? 'default' : 
-                            match.status === 'completed' ? 'secondary' : 'destructive'
-                          }>
-                            {match.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {match.status !== 'scheduled' ? (
-                            <div className="text-center font-bold">
-                              {match.homeScore} - {match.awayScore}
-                            </div>
-                          ) : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/matches/${match.id}`}>Details</Link>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Schedule a Match</DialogTitle>
+                      </DialogHeader>
+                      <form onSubmit={handleAddMatch} className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="home-team">Home Team</Label>
+                          <Select 
+                            value={newMatch.homeTeamId?.toString() || ''} 
+                            onValueChange={(value) => setNewMatch({ ...newMatch, homeTeamId: parseInt(value) })}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select home team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {teams.map(team => (
+                                <SelectItem key={`home-${team.id}`} value={team.id.toString()}>
+                                  {team.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="away-team">Away Team</Label>
+                          <Select 
+                            value={newMatch.awayTeamId?.toString() || ''} 
+                            onValueChange={(value) => setNewMatch({ ...newMatch, awayTeamId: parseInt(value) })}
+                            required
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select away team" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {teams.map(team => (
+                                <SelectItem key={`away-${team.id}`} value={team.id.toString()}>
+                                  {team.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="match-date">Match Date & Time</Label>
+                          <Input
+                            id="match-date"
+                            type="datetime-local"
+                            onChange={(e) => setNewMatch({ ...newMatch, startTime: new Date(e.target.value) })}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="match-location">Location</Label>
+                          <Input
+                            id="match-location"
+                            value={newMatch.location || ''}
+                            onChange={(e) => setNewMatch({ ...newMatch, location: e.target.value })}
+                            placeholder="Enter match location"
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2">
+                          <DialogClose asChild>
+                            <Button variant="outline" type="button">Cancel</Button>
+                          </DialogClose>
+                          <Button 
+                            type="submit"
+                            disabled={addMatchMutation.isPending}
+                          >
+                            {addMatchMutation.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : null}
+                            Schedule Match
                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </TabsContent>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                )}
+              </div>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date & Time</TableHead>
+                      <TableHead>Teams</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Score</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {matches.map((match) => {
+                      const homeTeam = teams?.find(team => team.id === match.homeTeamId);
+                      const awayTeam = teams?.find(team => team.id === match.awayTeamId);
+                      
+                      return (
+                        <TableRow key={match.id}>
+                          <TableCell className="font-medium">
+                            {new Date(match.startTime).toLocaleDateString()}<br/>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(match.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{homeTeam?.name}</div>
+                            <div className="font-medium">vs</div>
+                            <div className="font-medium">{awayTeam?.name}</div>
+                          </TableCell>
+                          <TableCell>{match.location}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              match.status === 'scheduled' ? 'outline' :
+                              match.status === 'in_progress' ? 'default' : 
+                              match.status === 'completed' ? 'secondary' : 'destructive'
+                            }>
+                              {match.status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {match.status !== 'scheduled' ? (
+                              <div className="text-center font-bold">
+                                {match.homeScore} - {match.awayScore}
+                              </div>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="sm" asChild>
+                              <Link href={`/matches/${match.id}`}>Details</Link>
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
 
-        {/* Standings Tab */}
-        <TabsContent value="standings" className="space-y-4">
-          <h2 className="text-xl font-semibold">Tournament Standings</h2>
-          <div className="text-center p-8 border rounded-lg bg-muted/20">
-            <Trophy className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="mt-2 text-muted-foreground">
-              Standings will be available once matches have been played.
-            </p>
-          </div>
-        </TabsContent>
-
-        {/* Statistics Tab */}
-        <TabsContent value="stats" className="space-y-4">
-          <h2 className="text-xl font-semibold">Tournament Statistics</h2>
-          <div className="text-center p-8 border rounded-lg bg-muted/20">
-            <Trophy className="h-12 w-12 mx-auto text-muted-foreground" />
-            <p className="mt-2 text-muted-foreground">
-              Statistics will be available once matches have been played.
-            </p>
-          </div>
-        </TabsContent>
-      </Tabs>
+            {isHost && (
+              <TabsContent value="settings">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tournament Settings</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-medium mb-2">Tournament Format</h4>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {tournament.settings.format}
+                        </p>
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-2">Number of Teams</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {tournament.settings.numberOfTeams}
+                        </p>
+                      </div>
+                      {tournament.settings.format === 'group_stage' && (
+                        <>
+                          <div>
+                            <h4 className="font-medium mb-2">Number of Groups</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {tournament.settings.numberOfGroups}
+                            </p>
+                          </div>
+                          <div>
+                            <h4 className="font-medium mb-2">Teams per Group</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {tournament.settings.teamsPerGroup}
+                            </p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            )}
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
