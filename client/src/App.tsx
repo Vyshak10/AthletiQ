@@ -17,6 +17,8 @@ import { Settings } from './pages/Settings'
 import { MatchManagement } from './pages/MatchManagement'
 import { TeamManagement } from './pages/TeamManagement'
 import { MatchSchedule } from './pages/MatchSchedule'
+import { TournamentList } from './pages/TournamentList'
+import { ManageTournament } from './pages/ManageTournament'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 
@@ -60,7 +62,7 @@ function AppRoutes() {
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       
       {/* Protected routes */}
-      <Route path="/tournaments" element={<ProtectedRoute><Tournaments /></ProtectedRoute>} />
+      <Route path="/tournaments" element={<ProtectedRoute><TournamentList /></ProtectedRoute>} />
       <Route path="/tournaments/create" element={<ProtectedRoute><CreateTournament /></ProtectedRoute>} />
       <Route path="/tournaments/manage" element={<ProtectedRoute><ManageTournaments /></ProtectedRoute>} />
       <Route path="/tournaments/:id" element={<ProtectedRoute><TournamentDetails /></ProtectedRoute>} />
@@ -70,6 +72,7 @@ function AppRoutes() {
       <Route path="/tournaments/:id/matches" element={<ProtectedRoute><MatchManagement /></ProtectedRoute>} />
       <Route path="/tournaments/:id/teams" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
       <Route path="/tournaments/:id/schedule" element={<ProtectedRoute><MatchSchedule /></ProtectedRoute>} />
+      <Route path="/tournaments/:id/manage" element={<ProtectedRoute><ManageTournament /></ProtectedRoute>} />
       
       {/* Catch all route */}
       <Route path="*" element={<Navigate to="/" replace />} />

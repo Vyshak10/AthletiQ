@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { SportType, Tournament } from '../../types/tournament'
 import { Button } from '../ui/button'
 import {
   Form,
@@ -148,6 +147,7 @@ export function CreateTournamentForm() {
       case 'football':
         form.reset({
           ...form.getValues(),
+          sport: 'football',
           format: '11s',
           max_players_per_team: 11,
           min_players_per_team: 7,
@@ -162,10 +162,10 @@ export function CreateTournamentForm() {
           free_kick_rule: true,
         })
         break
-
       case 'basketball':
         form.reset({
           ...form.getValues(),
+          sport: 'basketball',
           format: '5v5',
           max_players_per_team: 5,
           min_players_per_team: 5,
@@ -178,10 +178,10 @@ export function CreateTournamentForm() {
           free_throw_line: true,
         })
         break
-
       case 'volleyball':
         form.reset({
           ...form.getValues(),
+          sport: 'volleyball',
           format: 'indoor',
           max_players_per_team: 6,
           min_players_per_team: 6,
@@ -194,10 +194,10 @@ export function CreateTournamentForm() {
           rotation_rule: true,
         })
         break
-
       case 'cricket':
         form.reset({
           ...form.getValues(),
+          sport: 'cricket',
           format: 't20',
           max_players_per_team: 11,
           min_players_per_team: 11,
@@ -210,21 +210,6 @@ export function CreateTournamentForm() {
           wide_ball_rule: true,
         })
         break
-
-      case 'tennis':
-        form.reset({
-          ...form.getValues(),
-          format: 'singles',
-          max_players_per_team: 1,
-          min_players_per_team: 1,
-          sets_to_win: 2,
-          games_per_set: 6,
-          tiebreak_at: 6,
-          super_tiebreak: true,
-          let_rule: true,
-          advantage_rule: true,
-        })
-        break
     }
   }, [sport])
 
@@ -233,11 +218,74 @@ export function CreateTournamentForm() {
 
     setIsSubmitting(true)
     try {
+      // Extract base tournament data
+      const { name, sport, format, start_date, end_date, description } = data;
+      
+      // Create sport-specific settings object based on the sport
+      const sportSettings: any = {};
+      
+      if (sport === 'football') {
+        sportSettings.max_players_per_team = data.max_players_per_team;
+        sportSettings.min_players_per_team = data.min_players_per_team;
+        sportSettings.max_substitutes = data.max_substitutes;
+        sportSettings.match_duration = data.match_duration;
+        sportSettings.half_time_duration = data.half_time_duration;
+        sportSettings.extra_time_duration = data.extra_time_duration;
+        sportSettings.penalty_shootout = data.penalty_shootout;
+        sportSettings.offside_rule = data.offside_rule;
+        sportSettings.throw_in_rule = data.throw_in_rule;
+      } else if (sport === 'basketball') {
+        sportSettings.max_players_per_team = data.max_players_per_team;
+        sportSettings.min_players_per_team = data.min_players_per_team;
+        sportSettings.max_substitutes = data.max_substitutes;
+        sportSettings.quarter_duration = data.quarter_duration;
+        sportSettings.break_duration = data.break_duration;
+        sportSettings.overtime_duration = data.overtime_duration;
+        sportSettings.shot_clock = data.shot_clock;
+        sportSettings.three_point_line = data.three_point_line;
+        sportSettings.free_throw_line = data.free_throw_line;
+      } else if (sport === 'volleyball') {
+        sportSettings.max_players_per_team = data.max_players_per_team;
+        sportSettings.min_players_per_team = data.min_players_per_team;
+        sportSettings.max_substitutes = data.max_substitutes;
+        sportSettings.sets_to_win = data.sets_to_win;
+        sportSettings.points_per_set = data.points_per_set;
+        sportSettings.points_to_win_set = data.points_to_win_set;
+        sportSettings.points_to_win_tiebreak = data.points_to_win_tiebreak;
+        sportSettings.libero_allowed = data.libero_allowed;
+        sportSettings.rotation_rule = data.rotation_rule;
+      } else if (sport === 'cricket') {
+        sportSettings.max_players_per_team = data.max_players_per_team;
+        sportSettings.min_players_per_team = data.min_players_per_team;
+        sportSettings.max_substitutes = data.max_substitutes;
+        sportSettings.overs_per_innings = data.overs_per_innings;
+        sportSettings.super_over = data.super_over;
+        sportSettings.power_play = data.power_play;
+        sportSettings.drs = data.drs;
+        sportSettings.no_ball_rule = data.no_ball_rule;
+        sportSettings.wide_ball_rule = data.wide_ball_rule;
+      } else if (sport === 'tennis') {
+        sportSettings.max_players_per_team = data.max_players_per_team;
+        sportSettings.min_players_per_team = data.min_players_per_team;
+        sportSettings.sets_to_win = data.sets_to_win;
+        sportSettings.games_per_set = data.games_per_set;
+        sportSettings.tiebreak_at = data.tiebreak_at;
+        sportSettings.super_tiebreak = data.super_tiebreak;
+        sportSettings.let_rule = data.let_rule;
+        sportSettings.advantage_rule = data.advantage_rule;
+      }
+
       const { error } = await supabase.from('tournaments').insert([
         {
-          ...data,
+          name,
+          sport,
+          format,
+          start_date,
+          end_date,
+          description,
           created_by: user.id,
           status: 'draft',
+          sport_settings: sportSettings
         },
       ])
 

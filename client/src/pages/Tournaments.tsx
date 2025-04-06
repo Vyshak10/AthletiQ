@@ -20,15 +20,26 @@ export function Tournaments() {
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState<TournamentFilters>({})
+  const [activeTab, setActiveTab] = useState('all')
   const { toast } = useToast()
   const { user } = useAuth()
 
   useEffect(() => {
-    fetchTournaments()
-  }, [filters])
+    if (user) {
+      console.log('User authenticated, fetching tournaments...')
+      fetchTournaments()
+    } else {
+      console.log('No user authenticated')
+    }
+  }, [filters, activeTab, user])
 
   const fetchTournaments = async () => {
     try {
+      setLoading(true)
+      console.log('Fetching tournaments...')
+      console.log('Current user:', user?.id)
+      console.log('Active tab:', activeTab)
+
       let query = supabase
         .from('tournaments')
         .select('*')
@@ -50,15 +61,25 @@ export function Tournaments() {
         query = query.ilike('name', `%${filters.search}%`)
       }
 
+      // If on "My Tournaments" tab, filter by created_by
+      if (activeTab === 'my' && user) {
+        query = query.eq('created_by', user.id)
+      }
+
       const { data, error } = await query
 
-      if (error) throw error
+      if (error) {
+        console.error('Error fetching tournaments:', error)
+        throw error
+      }
+
+      console.log('Fetched tournaments:', data)
       setTournaments(data || [])
     } catch (error) {
       console.error('Error fetching tournaments:', error)
       toast({
         title: 'Error',
-        description: 'Failed to fetch tournaments',
+        description: 'Failed to fetch tournaments. Please check the console for details.',
         variant: 'destructive',
       })
     } finally {
@@ -175,7 +196,7 @@ export function Tournaments() {
         />
       </div>
 
-      <Tabs defaultValue="all" className="space-y-4">
+      <Tabs defaultValue="all" className="space-y-4" onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">All Tournaments</TabsTrigger>
           <TabsTrigger value="my">My Tournaments</TabsTrigger>
@@ -184,12 +205,51 @@ export function Tournaments() {
         <TabsContent value="all" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {tournaments.map((tournament) => (
-              <Link
-                key={tournament.id}
-                to={`/tournaments/${tournament.id}`}
-                className="block"
-              >
-                <Card className="hover:shadow-lg transition-shadow">
+              <Card key={tournament.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <span>{getSportIcon(tournament.sport)}</span>
+                      {tournament.name}
+                    </CardTitle>
+                    <span className={getStatusColor(tournament.status)}>
+                      {tournament.status}
+                    </span>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-500 mb-2">
+                    {tournament.description}
+                  </p>
+                  <div className="flex justify-between text-sm">
+                    <span>Format: {tournament.format}</span>
+                    <span>
+                      {new Date(tournament.start_date).toLocaleDateString()} -{' '}
+                      {new Date(tournament.end_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-end gap-2 mt-4">
+                    <Link to={`/tournaments/${tournament.id}`}>
+                      <Button variant="outline">View</Button>
+                    </Link>
+                    {tournament.created_by === user?.id && (
+                      <Link to={`/tournaments/${tournament.id}/manage`}>
+                        <Button>Manage</Button>
+                      </Link>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="my" className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {tournaments
+              .filter((t) => t.created_by === user?.id)
+              .map((tournament) => (
+                <Card key={tournament.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
@@ -212,49 +272,18 @@ export function Tournaments() {
                         {new Date(tournament.end_date).toLocaleDateString()}
                       </span>
                     </div>
+                    <div className="flex justify-end gap-2 mt-4">
+                      <Link to={`/tournaments/${tournament.id}`}>
+                        <Button variant="outline">View</Button>
+                      </Link>
+                      {tournament.created_by === user?.id && (
+                        <Link to={`/tournaments/${tournament.id}/manage`}>
+                          <Button>Manage</Button>
+                        </Link>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="my" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {tournaments
-              .filter((t) => t.created_by === user?.id)
-              .map((tournament) => (
-                <Link
-                  key={tournament.id}
-                  to={`/tournaments/${tournament.id}`}
-                  className="block"
-                >
-                  <Card className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                          <span>{getSportIcon(tournament.sport)}</span>
-                          {tournament.name}
-                        </CardTitle>
-                        <span className={getStatusColor(tournament.status)}>
-                          {tournament.status}
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-500 mb-2">
-                        {tournament.description}
-                      </p>
-                      <div className="flex justify-between text-sm">
-                        <span>Format: {tournament.format}</span>
-                        <span>
-                          {new Date(tournament.start_date).toLocaleDateString()} -{' '}
-                          {new Date(tournament.end_date).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
               ))}
           </div>
         </TabsContent>

@@ -1,6 +1,29 @@
 export type SportType = 'football' | 'basketball' | 'volleyball' | 'cricket' | 'tennis'
 
-export type TournamentStatus = 'draft' | 'active' | 'completed' | 'cancelled'
+export type TournamentStatus = 'draft' | 'published' | 'in_progress' | 'completed' | 'cancelled'
+
+export interface Tournament {
+  id: string
+  name: string
+  sport: SportType
+  format: string
+  start_date: string
+  end_date: string
+  status: TournamentStatus
+  description: string
+  created_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TournamentStats {
+  id: string
+  tournament_id: string
+  team_name: string
+  score: number
+  created_at: string
+  updated_at: string
+}
 
 export interface BaseTournament {
   id: string

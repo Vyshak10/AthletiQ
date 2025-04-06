@@ -174,7 +174,7 @@ export function ManageTournaments() {
                           size="icon"
                           asChild
                         >
-                          <Link to={`/tournaments/${tournament.id}/edit`}>
+                          <Link to={`/tournaments/${tournament.id}/manage`}>
                             <Edit className="h-4 w-4" />
                           </Link>
                         </Button>
